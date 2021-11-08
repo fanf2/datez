@@ -82,7 +82,7 @@ fn main() -> Result<()> {
         }
         args.push(zone);
     }
-    if args.len() < 3 || args[1] == "-h" {
+    if args.len() < 3 || args[1] == "-h" || args[1] == "--help" {
         bail!("usage: datez <datetime> <tz>...");
     }
     let time = get_time(&args[1], &args[2], &parse_tz(&args[2])?)?;
