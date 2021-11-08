@@ -1,5 +1,5 @@
-use anyhow::{anyhow, bail, ensure, Result};
-use chrono::{DateTime, NaiveDateTime, TimeZone};
+use anyhow::{anyhow, bail, Result};
+use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use chrono_tz::Tz;
 use std::ffi::OsStr;
 use std::path::PathBuf;
@@ -50,6 +50,9 @@ fn print_time(time: &DateTime<Tz>, zone: &str) -> Result<()> {
 }
 
 fn localzone() -> Result<String> {
+    if let Some(zone) = std::env::var_os("TZ") {
+        return tz_ok(&zone);
+    }
     let path = std::fs::read_link("/etc/localtime")?;
     let mut dir = None;
     let mut leaf = None;
@@ -74,9 +77,14 @@ fn localzone() -> Result<String> {
 fn main() -> Result<()> {
     let mut args: Vec<String> = std::env::args().collect();
     if let Ok(zone) = localzone() {
+        if args.len() == 1 {
+            args.push(format!("{}", Local::now().format("%F.%T")));
+        }
         args.push(zone);
     }
-    ensure!(args.len() >= 3, "usage: datez <datetime> <tz>...");
+    if args.len() < 3 || args[1] == "-h" {
+        bail!("usage: datez <datetime> <tz>...");
+    }
     let time = get_time(&args[1], &args[2], &parse_tz(&args[2])?)?;
     print_time(&time, "UTC")?;
     for arg in args[2..].iter() {
