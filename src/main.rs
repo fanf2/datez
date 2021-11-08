@@ -1,3 +1,17 @@
+//! Write the time in ISO 8601 / RFC 3339 format but without a UTC offset,
+//! and list as many tz database timezone names as you want.
+//!
+//! The time is read using the first timezone; it is converted to UTC and
+//! printed in UTC and in every timezone you listed, and in your local
+//! time zone (if possible).
+//!
+//! The local time zone is discovered from the `TZ` environment variable
+//! or by reading the symlink at `/etc/localtime`; if neither of those
+//! work you have to list your time zone explicitly.
+//!
+//! On Windows we use one Win32 syscalls or fallback to TZ as well.
+//!
+
 use anyhow::{anyhow, bail, Result};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use chrono_tz::Tz;
@@ -11,6 +25,10 @@ use std::path::PathBuf;
 
 /// Try several formats for parsing time
 ///
+/// Example:
+/// ```
+/// let ndt = parse_time(" 2021-07-21.16:00:00")?;
+/// ```
 fn parse_time(arg: &str) -> Result<NaiveDateTime> {
     let fmts = [
         "%F.%T",
@@ -47,6 +65,8 @@ fn get_time(time: &str, zone: &str, tz: &Tz) -> Result<DateTime<Tz>> {
     })
 }
 
+/// Prints the specified time with its plain text timezone
+///
 fn print_time_tz(time: &DateTime<Tz>, zone: &str, tz: &Tz) {
     let time = time.with_timezone(tz);
     println!("{} ({})", time.format("%F.%T%z"), zone);
