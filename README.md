@@ -1,5 +1,5 @@
-datez: convert and display a time across several timezones
-==========================================================
+datez: convert a time into several timezones
+============================================
 
 In July, when it is 16:00 in Canberra, what time is it in Caracas, and
 where I am in Cambridge?
