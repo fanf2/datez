@@ -18,6 +18,11 @@ install
 
 [cargo]: https://doc.rust-lang.org/cargo/commands/cargo-install.html
 
+**Supported Platforms**
+* Unix (tested on FreeBSD and macOS)
+* Windows
+    * cmd.exe
+    * Powershell
 
 usage
 -----
