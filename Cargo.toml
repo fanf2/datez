@@ -7,3 +7,13 @@ edition = "2021"
 anyhow = "~1"
 chrono = "~0"
 chrono-tz = "~0"
+
+[dependencies.windows]
+version = "0.25.0"
+features = [
+    "Data_Xml_Dom",
+    "Win32_Foundation",
+    "Win32_System_Time",
+    "Win32_Security",
+    "Win32_UI_WindowsAndMessaging",
+]
