@@ -2,8 +2,15 @@ use anyhow::{anyhow, bail, Result};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use chrono_tz::Tz;
 use std::ffi::OsStr;
+
+#[cfg(windows)]
+use std::os::windows::ffi::OsStringExt;
+
+#[cfg(unix)]
 use std::path::PathBuf;
 
+/// Try several formats for parsing time
+///
 fn parse_time(arg: &str) -> Result<NaiveDateTime> {
     let fmts = [
         "%F.%T",
@@ -26,6 +33,8 @@ fn parse_tz(zone: &str) -> Result<Tz> {
     zone.parse().map_err(|e| anyhow!("{}", e))
 }
 
+/// Validate the timezone
+///
 fn tz_ok(zone: &OsStr) -> Result<String> {
     let zone = zone.to_str().ok_or_else(|| anyhow!("not utf8"))?;
     parse_tz(zone).map(|_| zone.to_owned())
@@ -49,6 +58,8 @@ fn print_time(time: &DateTime<Tz>, zone: &str) -> Result<()> {
     Ok(())
 }
 
+/// Look for the local timezone on Unix
+#[cfg(unix)]
 fn localzone() -> Result<String> {
     if let Some(zone) = std::env::var_os("TZ") {
         return tz_ok(&zone);
@@ -74,6 +85,29 @@ fn localzone() -> Result<String> {
     bail!("could not find local timezone")
 }
 
+/// Windows version of `localzone`.
+///
+#[cfg(windows)]
+fn localzone() -> Result<String> {
+    use std::ffi::OsString;
+    use windows::Win32::System::Time::*;
+
+    let mut tz = TIME_ZONE_INFORMATION::default();
+    unsafe {
+        let e = GetTimeZoneInformation(&mut tz);
+        if e == 0 {
+            let os_tz = OsString::from_wide(&tz.StandardName[..]);
+            let tz = os_tz.as_os_str();
+
+            return tz_ok(tz);
+        }
+    }
+    match std::env::var_os("TZ") {
+        Some(tz) => tz_ok(&tz),
+        _ => Err(anyhow!("bad TZ")),
+    }
+}
+
 fn main() -> Result<()> {
     let mut args: Vec<String> = std::env::args().collect();
     if let Ok(zone) = localzone() {
@@ -91,4 +125,32 @@ fn main() -> Result<()> {
         print_time(&time, arg)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_localzone_tz() {
+        std::env::remove_var("TZ");
+
+        std::env::set_var("TZ", "Europe/Paris");
+        let tz = localzone();
+        assert!(tz.is_ok());
+
+        assert_eq!("Europe/Paris".to_string(), tz.unwrap());
+    }
+
+    #[test]
+    fn test_localzone_notz() {
+        std::env::remove_var("TZ");
+
+        let tz = localzone();
+        println!("{:?}", tz);
+        assert!(tz.is_ok());
+
+        assert_eq!("Europe/Paris".to_string(), tz.unwrap());
+    }
 }
