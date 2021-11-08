@@ -19,11 +19,11 @@ fn parse_time(arg: &str) -> Result<NaiveDateTime> {
             return Ok(time);
         }
     }
-    bail!("could not parse time {}", arg);
+    bail!("time must be in RFC 3339 / ISO 8601 format, without a UTC offset");
 }
 
 fn parse_tz(zone: &str) -> Result<Tz> {
-    zone.parse().map_err(|e| anyhow!("could not parse {}: {}", zone, e))
+    zone.parse().map_err(|e| anyhow!("{}", e))
 }
 
 fn tz_ok(zone: &OsStr) -> Result<String> {
@@ -34,7 +34,7 @@ fn tz_ok(zone: &OsStr) -> Result<String> {
 fn get_time(time: &str, zone: &str, tz: &Tz) -> Result<DateTime<Tz>> {
     let naive = parse_time(time)?;
     tz.from_local_datetime(&naive).single().ok_or_else(|| {
-        anyhow!("could not convert {} to {} time zone", time, zone)
+        anyhow!("could not convert {} to {} timezone", time, zone)
     })
 }
 
@@ -71,7 +71,7 @@ fn localzone() -> Result<String> {
     if let Some(leaf) = leaf {
         return tz_ok(leaf.as_os_str());
     }
-    bail!("could not find local zone")
+    bail!("could not find local timezone")
 }
 
 fn main() -> Result<()> {
