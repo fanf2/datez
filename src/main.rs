@@ -1,16 +1,26 @@
-//! Write the time in ISO 8601 / RFC 3339 format but without a UTC offset,
-//! and list as many tz database timezone names as you want.
+//! `datez` is a small command-line utility to convert a time into
+//! several timezones.
+//!
+//! ## usage
+//!
+//!     datez <time> <zone>...
+//!
+//! You should write the time in ISO 8601 / RFC 3339 format but
+//! _without_ a UTC offset, and list as many tz database timezone names
+//! as you want.
 //!
 //! The time is read using the first timezone; it is converted to UTC and
 //! printed in UTC and in every timezone you listed, and in your local
-//! time zone (if possible).
+//! timezone (if possible).
 //!
-//! The local time zone is discovered from the `TZ` environment variable
-//! or by reading the symlink at `/etc/localtime`; if neither of those
-//! work you have to list your time zone explicitly.
+//! On Unix, the local timezone is discovered from the `TZ` environment
+//! variable, or by reading the symlink at `/etc/localtime`; it isn't an
+//! error if neither of those work, but you have to list your time zone
+//! explicitly.
 //!
-//! On Windows we use one Win32 syscalls or fallback to TZ as well.
-//!
+//! On Windows `datez` gets the local timezone using Win32
+//! `GetTimeZoneInformation()`, or falls back to the TZ environment
+//! variable.
 
 use anyhow::{anyhow, bail, Result};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
@@ -47,7 +57,7 @@ fn parse_time(arg: &str) -> Result<NaiveDateTime> {
     bail!("time must be in RFC 3339 / ISO 8601 format, without a UTC offset");
 }
 
-/// Map the timezone string into a proper Tz from the IANA TZDB
+/// Map an IANA TZDB timezone string into a Tz object
 ///
 fn parse_tz(zone: &str) -> Result<Tz> {
     zone.parse().map_err(|e| anyhow!("{}", e))
@@ -60,6 +70,8 @@ fn tz_ok(zone: &OsStr) -> Result<String> {
     parse_tz(zone).map(|_| zone.to_owned())
 }
 
+/// Parse the time and set its timezone
+///
 fn get_time(time: &str, zone: &str, tz: &Tz) -> Result<DateTime<Tz>> {
     let naive = parse_time(time)?;
     tz.from_local_datetime(&naive).single().ok_or_else(|| {
@@ -74,7 +86,7 @@ fn print_time_tz(time: &DateTime<Tz>, zone: &str, tz: &Tz) {
     println!("{} ({})", time.format("%F.%T%z"), zone);
 }
 
-/// Extracts the time zone before printing the result
+/// Extracts the timezone before printing the result
 ///
 fn print_time(time: &DateTime<Tz>, zone: &str) -> Result<()> {
     let tz = parse_tz(zone)?;
@@ -83,6 +95,7 @@ fn print_time(time: &DateTime<Tz>, zone: &str) -> Result<()> {
 }
 
 /// Look for the local timezone on Unix
+///
 #[cfg(unix)]
 fn localzone() -> Result<String> {
     if let Some(zone) = std::env::var_os("TZ") {
@@ -109,7 +122,7 @@ fn localzone() -> Result<String> {
     bail!("could not find local timezone")
 }
 
-/// Windows version of `localzone`.
+/// Look for the local timezone
 ///
 #[cfg(windows)]
 fn localzone() -> Result<String> {
@@ -132,6 +145,8 @@ fn localzone() -> Result<String> {
     }
 }
 
+/// Process the command line
+///
 fn main() -> Result<()> {
     let mut args: Vec<String> = std::env::args().collect();
     if let Ok(zone) = localzone() {

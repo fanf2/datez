@@ -18,27 +18,36 @@ install
 
 [cargo]: https://doc.rust-lang.org/cargo/commands/cargo-install.html
 
-**Supported Platforms**
-* Unix (tested on FreeBSD and macOS)
-* Windows
-    * cmd.exe
-    * Powershell
+We have tested `datez` on:
+
+  * Unix
+      * FreeBSD
+      * Debian Linux
+      * macOS
+  * Windows
+      * cmd.exe
+      * Powershell
 
 usage
 -----
 
         datez <time> <zone>...
 
-Write the time in ISO 8601 / RFC 3339 format but without a UTC offset,
-and list as many tz database timezone names as you want.
+You should wite the time in ISO 8601 / RFC 3339 format but _without_ a
+UTC offset, and list as many tz database timezone names as you want.
 
 The time is read using the first timezone; it is converted to UTC and
 printed in UTC and in every timezone you listed, and in your local
-time zone (if possible).
+timezone (if possible).
 
-The local time zone is discovered from the `TZ` environment variable
-or by reading the symlink at `/etc/localtime`; if neither of those
-work you have to list your time zone explicitly.
+On Unix, the local timezone is discovered from the `TZ` environment
+variable, or by reading the symlink at `/etc/localtime`; it isn't an
+error if neither of those work, but you have to list your time zone
+explicitly.
+
+On Windows `datez` gets the local timezone using Win32
+`GetTimeZoneInformation()`, or falls back to trying the `TZ`
+environment variable.
 
 
 licence
