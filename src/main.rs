@@ -47,6 +47,8 @@ fn parse_time(arg: &str) -> Result<NaiveDateTime> {
     bail!("time must be in RFC 3339 / ISO 8601 format, without a UTC offset");
 }
 
+/// Map the timezone string into a proper Tz from the IANA TZDB
+///
 fn parse_tz(zone: &str) -> Result<Tz> {
     zone.parse().map_err(|e| anyhow!("{}", e))
 }
@@ -182,11 +184,34 @@ mod tests {
     #[rstest]
     #[case("")]
     #[case("bad")]
-    #[case("3000:13:0034:34:33")]
-    #[case("3000:13:00 34:34:33")]
-    #[case("3000:13:00.34:34:33")]
-    #[case("3000:13:00T34:34:33")]
-    fn test_parsetime_bad(#[case] s: &str) {
+    #[case("30001300343433")]
+    #[case("30001300 343433")]
+    #[case("30001300.343433")]
+    #[case("30001300T343433")]
+    fn test_parsetime_nok(#[case] s: &str) {
         assert!(parse_time(s).is_err());
+    }
+
+    #[rstest]
+    #[case("20211201213433")]
+    #[case("20211202 213433")]
+    #[case("20211203.213433")]
+    #[case("20211204T213433")]
+    fn test_parsetime_ok(#[case] s: &str) {
+        assert!(parse_time(s).is_ok());
+    }
+
+    #[rstest]
+    #[case("Europe/Paris")]
+    #[case("Europe/London")]
+    fn test_parse_tz_ok(#[case] s: &str) {
+        assert!(parse_tz(s).is_ok());
+    }
+
+    #[rstest]
+    #[case("Nowhere/None")]
+    #[case("Europe/Marseille")]
+    fn test_parse_tz_nok(#[case] s: &str) {
+        assert!(parse_tz(s).is_err());
     }
 }
