@@ -19,3 +19,6 @@ features = [
     "Win32_Foundation",
     "Win32_System_Time",
 ]
+
+[dev-dependencies]
+rstest = "0.11.0"
