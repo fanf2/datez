@@ -21,9 +21,9 @@ install
 We have tested `datez` on:
 
   * Unix
+      * macOS
       * FreeBSD
       * Debian Linux
-      * macOS
   * Windows
       * cmd.exe
       * Powershell
@@ -54,6 +54,7 @@ licence
 -------
 
 > This was written by Tony Finch <<dot@dotat.at>>  
+> and Ollivier Robert <<roberto@keltia.net>>  
 > You may do anything with it. It has no warranty.  
 > <https://creativecommons.org/publicdomain/zero/1.0/>  
 > SPDX-License-Identifier: CC0-1.0

@@ -1,12 +1,14 @@
 [package]
 name = "datez"
-version = "0.0.0"
-edition = "2021"
-authors = ["Tony Finch <dot@dotat.at>"]
-license = "CC0-1.0"
-description = "Convert a time in several timezones."
-readme = "README.md"
+version = "0.1.0"
+description = "Convert a time into several timezones."
 keywords = ["time", "timezone", "conversion"]
+authors = [
+	"Tony Finch <dot@dotat.at>",
+	"Ollivier Robert <roberto@keltia.net>"
+	]
+license = "CC0-1.0"
+edition = "2021"
 
 [dependencies]
 anyhow = "~1"
