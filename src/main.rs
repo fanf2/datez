@@ -154,6 +154,8 @@ fn main() -> Result<()> {
 mod tests {
     use super::*;
 
+    use rstest::rstest;
+
     #[test]
     fn test_localzone_tz() {
         std::env::remove_var("TZ");
@@ -166,6 +168,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn test_localzone_notz() {
         std::env::remove_var("TZ");
 
@@ -174,5 +177,16 @@ mod tests {
         assert!(tz.is_ok());
 
         assert_eq!("Europe/Paris".to_string(), tz.unwrap());
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("bad")]
+    #[case("3000:13:0034:34:33")]
+    #[case("3000:13:00 34:34:33")]
+    #[case("3000:13:00.34:34:33")]
+    #[case("3000:13:00T34:34:33")]
+    fn test_parsetime_bad(#[case] s: &str) {
+        assert!(parse_time(s).is_err());
     }
 }
