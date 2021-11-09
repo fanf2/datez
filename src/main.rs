@@ -174,25 +174,23 @@ mod tests {
     use rstest::rstest;
 
     #[test]
-    fn test_localzone_tz() {
+    fn test_localzone() {
+        // this all needs to be one test function, because tests are run
+        // in parallel on multiple threads, which is incompatible with
+        // manipulating environment variables
+
         std::env::remove_var("TZ");
+        let path = std::fs::read_link("/etc/localtime");
+        let zone = localzone();
+        match (&path, &zone) {
+            (Ok(path), Ok(zone)) => assert!(path.ends_with(zone)),
+            (Err(_), Err(_)) => (), // plausible
+            _ => panic!("inconsistent localzone: {:?} / {:?}", path, zone),
+        }
 
         std::env::set_var("TZ", "Europe/Paris");
         let tz = localzone();
         assert!(tz.is_ok());
-
-        assert_eq!("Europe/Paris".to_string(), tz.unwrap());
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_localzone_notz() {
-        std::env::remove_var("TZ");
-
-        let tz = localzone();
-        println!("{:?}", tz);
-        assert!(tz.is_ok());
-
         assert_eq!("Europe/Paris".to_string(), tz.unwrap());
     }
 
