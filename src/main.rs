@@ -13,25 +13,19 @@
 //! printed in UTC and in every timezone you listed, and in your local
 //! timezone (if possible).
 //!
-//! On Unix, the local timezone is discovered from the `TZ` environment
-//! variable, or by reading the symlink at `/etc/localtime`; it isn't an
-//! error if neither of those work, but you have to list your time zone
+//! The local timezone is discovered from the `TZ` environment variable
+//! if that is set, or by an OS-specific mechanism; it isn't an error
+//! if neither of those work, but you have to list your timezone
 //! explicitly.
 //!
-//! On Windows `datez` gets the local timezone using Win32
-//! `GetTimeZoneInformation()`, or falls back to the TZ environment
-//! variable.
+//! On Unix, `datez` reads the symlink at `/etc/localtime`.
+//!
+//! On Windows, `datez` calls Win32 `GetTimeZoneInformation()`.
 
 use anyhow::{anyhow, bail, Result};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use chrono_tz::Tz;
 use std::ffi::OsStr;
-
-#[cfg(windows)]
-use std::os::windows::ffi::OsStringExt;
-
-#[cfg(unix)]
-use std::path::PathBuf;
 
 /// Try several formats for parsing time
 ///
@@ -94,13 +88,22 @@ fn print_time(time: &DateTime<Tz>, zone: &str) -> Result<()> {
     Ok(())
 }
 
-/// Look for the local timezone on Unix
+/// Look for the local timezone
 ///
-#[cfg(unix)]
 fn localzone() -> Result<String> {
     if let Some(zone) = std::env::var_os("TZ") {
-        return tz_ok(&zone);
+        tz_ok(&zone)
+    } else {
+        localzone_os()
     }
+}
+
+/// Look for the local timezone using `/etc/localtime`
+///
+#[cfg(unix)]
+fn localzone_os() -> Result<String> {
+    use std::path::PathBuf;
+
     let path = std::fs::read_link("/etc/localtime")?;
     let mut dir = None;
     let mut leaf = None;
@@ -116,33 +119,28 @@ fn localzone() -> Result<String> {
             return Ok(zone);
         }
     }
+    // try single-part timezone names such as "UTC"
     if let Some(leaf) = leaf {
         return tz_ok(leaf.as_os_str());
     }
     bail!("could not find local timezone")
 }
 
-/// Look for the local timezone
+/// Look for the local timezone using `GetTimeZoneInformation()`
 ///
 #[cfg(windows)]
-fn localzone() -> Result<String> {
+fn localzone_os() -> Result<String> {
     use std::ffi::OsString;
+    use std::os::windows::ffi::OsStringExt;
     use windows::Win32::System::Time::*;
 
     let mut tz = TIME_ZONE_INFORMATION::default();
-    unsafe {
-        let e = GetTimeZoneInformation(&mut tz);
-        if e == 0 {
-            let os_tz = OsString::from_wide(&tz.StandardName[..]);
-            let tz = os_tz.as_os_str();
-
-            return tz_ok(tz);
-        }
+    let e = unsafe { GetTimeZoneInformation(&mut tz) };
+    if e == 0 {
+        let zone = OsString::from_wide(&tz.StandardName[..]);
+        return tz_ok(zone.as_os_str());
     }
-    match std::env::var_os("TZ") {
-        Some(tz) => tz_ok(&tz),
-        _ => Err(anyhow!("bad TZ")),
-    }
+    bail!("could not find local timezone")
 }
 
 /// Process the command line

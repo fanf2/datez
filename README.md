@@ -40,14 +40,14 @@ The time is read using the first timezone; it is converted to UTC and
 printed in UTC and in every timezone you listed, and in your local
 timezone (if possible).
 
-On Unix, the local timezone is discovered from the `TZ` environment
-variable, or by reading the symlink at `/etc/localtime`; it isn't an
-error if neither of those work, but you have to list your time zone
+The local timezone is discovered from the `TZ` environment variable
+if that is set, or by an OS-specific mechanism; it isn't an error
+if neither of those work, but you have to list your timezone
 explicitly.
 
-On Windows `datez` gets the local timezone using Win32
-`GetTimeZoneInformation()`, or falls back to trying the `TZ`
-environment variable.
+On Unix, `datez` reads the symlink at `/etc/localtime`.
+
+On Windows, `datez` calls Win32 `GetTimeZoneInformation()`.
 
 
 licence
