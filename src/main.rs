@@ -72,6 +72,8 @@ fn print_time_tz(time: &DateTime<Tz>, zone: &str, tz: &Tz) {
     println!("{} ({})", time.format("%F.%T%z"), zone);
 }
 
+/// Extracts the time zone before printing the result
+///
 fn print_time(time: &DateTime<Tz>, zone: &str) -> Result<()> {
     let tz = parse_tz(zone)?;
     print_time_tz(time, zone, &tz);
