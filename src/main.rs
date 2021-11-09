@@ -172,6 +172,7 @@ mod tests {
     use rstest::rstest;
 
     #[test]
+    #[cfg(unix)]
     fn test_localzone() {
         // this all needs to be one test function, because tests are run
         // in parallel on multiple threads, which is incompatible with
