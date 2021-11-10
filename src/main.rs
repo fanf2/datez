@@ -133,8 +133,7 @@ fn from_wide_null(wide: &[u16]) -> OsString {
     use std::os::windows::ffi::OsStringExt;
 
     let len = wide.iter().take_while(|&&c| c != 0).count();
-    let s = OsString::from_wide(&wide[..len]);
-    s
+    OsString::from_wide(&wide[..len])
 }
 
 /// Look for the local timezone using `GetTimeZoneInformation()`
@@ -168,7 +167,7 @@ fn canonize_tz(zone: &str) -> Result<String> {
         return Ok("Europe/Paris".to_string());
     }
     let z = OsStr::new(zone);
-    tz_ok(&z)
+    tz_ok(z)
 }
 
 /// Process the command line
