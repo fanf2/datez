@@ -25,7 +25,7 @@
 use anyhow::{anyhow, bail, Result};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use chrono_tz::Tz;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 
 /// Try several formats for parsing time
 ///
@@ -126,21 +126,49 @@ fn localzone_os() -> Result<String> {
     bail!("could not find local timezone")
 }
 
+/// Remove trailing \u{0} from \u16 string returned by Windows
+/// Inspired from https://github.com/retep998/wio-rs/blob/master/src/wide.rs
+#[cfg(windows)]
+fn from_wide_null(wide: &[u16]) -> OsString {
+    use std::os::windows::ffi::OsStringExt;
+
+    let len = wide.iter().take_while(|&&c| c != 0).count();
+    let s = OsString::from_wide(&wide[..len]);
+    s
+}
+
 /// Look for the local timezone using `GetTimeZoneInformation()`
 ///
 #[cfg(windows)]
 fn localzone_os() -> Result<String> {
-    use std::ffi::OsString;
-    use std::os::windows::ffi::OsStringExt;
     use windows::Win32::System::Time::*;
 
     let mut tz = TIME_ZONE_INFORMATION::default();
     let e = unsafe { GetTimeZoneInformation(&mut tz) };
-    if e == 0 {
-        let zone = OsString::from_wide(&tz.StandardName[..]);
-        return tz_ok(zone.as_os_str());
+    match e {
+        0 | 1 | 2 => {
+            let zone = from_wide_null(&tz.StandardName[..]);
+            let zone = zone.to_str();
+            // Fix some timezones
+            match zone {
+                Some(s) => canonize_tz(s),
+                _ => bail!("could not find local timezone"),
+            }
+        },
+        _ => bail!("could not find local timezone")
     }
-    bail!("could not find local timezone")
+}
+
+/// Windows timezones are in some case completely different from the rest of world
+/// so fix it for known cases.
+#[cfg(windows)]
+fn canonize_tz(zone: &str) -> Result<String> {
+    // XXX will probably evolve into a hash if other cases appear
+    if zone == "Romance Standard Time" {
+        return Ok("Europe/Paris".to_string());
+    }
+    let z = OsStr::new(zone);
+    tz_ok(&z)
 }
 
 /// Process the command line
