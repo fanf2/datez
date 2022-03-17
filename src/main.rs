@@ -25,7 +25,9 @@
 use anyhow::{anyhow, bail, Result};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use chrono_tz::Tz;
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsStr;
+#[cfg(windows)]
+use std::ffi::OsString;
 
 /// Try several formats for parsing time
 ///
