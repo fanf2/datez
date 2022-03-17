@@ -155,8 +155,8 @@ fn localzone_os() -> Result<String> {
                 Some(s) => canonize_tz(s),
                 _ => bail!("could not find local timezone"),
             }
-        },
-        _ => bail!("could not find local timezone")
+        }
+        _ => bail!("could not find local timezone"),
     }
 }
 
